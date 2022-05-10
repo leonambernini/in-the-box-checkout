@@ -1,0 +1,148 @@
+<script>
+  var loadScript = function(url, callback){
+
+      // adding the script element to the head as suggested before
+       var head = document.getElementsByTagName('head')[0];
+       var script = document.createElement('script');
+       script.type = 'text/javascript';
+       script.src = url;
+
+       // then bind the event to the callback function 
+       // there are several events for cross browser compatibility
+       script.onreadystatechange = callback;
+       script.onload = callback;
+
+       // fire the loading
+       head.appendChild(script);
+
+   };
+
+   var myAppJavaScript = function($){
+
+       var shippingId = '';
+
+       var url = new URL(window.location.href);
+       var lb = url.searchParams.get("lb");
+
+       // if( lb != 'active' ){
+       //     return false;
+       // }
+
+       var funcInAction = false;
+       function ajustShippingCheckout(){
+           if( $('.shipping-options-container').length && !funcInAction ){
+               funcInAction = true;
+               $.each( $('.shipping-option').not('.is-ok'), function(){
+                   var $this = $(this);
+                   var $label = $this.find('.shipping-method-item');
+                   var html = $label.html();
+
+                   console.log(html.indexOf('Chega em'))
+                   if( html.indexOf('Chega em') >= 0 ){
+                       $label.html(html.replace('Chega em ', 'Prazo para despachar + '));
+                   }else{
+                       $label.html(html.replace('Chega ', 'Prazo para despachar + '));
+                   }
+                   $this.addClass('is-ok');
+               });
+               funcInAction = false;
+           }
+       }
+
+       ajustShippingCheckout();
+       $(window).scroll( function(){
+           ajustShippingCheckout();
+       });
+       $(document).ajaxStop(function() {
+           ajustShippingCheckout();
+       });
+       $('body').on('DOMNodeInserted DOMNodeRemoved', '.shipping-options', function(){
+           if( !funcInAction ){
+               ajustShippingCheckout();
+           }
+       });
+
+
+       var $inputEmail = $('input[name="contact.email"]').not('.disabled');
+
+       function validEmail(focus=false){
+           var email1 = $('input[name="contact.email"]').val();
+           var email2 = $('#compare-email').val();
+
+           if( email1 !== email2 || email1 == '' || email2 == '' ){
+               $('.form-group-compare').addClass('form-group-error');
+               if( !$('.form-group-compare .error').length ){
+                   $('.form-group-compare').append('<div class="error"><div class="alert alert-danger-bagged"><span>O email não coincide.</span></div></div>');
+               } 
+               if( focus ){
+                   $('#compare-email').focus();
+               }
+               return false;
+           }
+
+           $('#cta-fake-email').hide();
+           $('.form-step .btn-primary').not('#cta-fake-email').show();
+           $('.form-group-compare').removeClass('form-group-error');
+           $('.form-group-compare').find('.error').remove();
+           return true;
+       };
+
+       if( $inputEmail.length ){
+           var $group = $inputEmail.closest('.form-group');
+           $group.after(`
+               <div class="form-group form-group-compare">
+                   <div class="has-float-label">
+                       <input type="email" class="form-control" name="compare-email" value="" data-testid="email" autocomplete="false" autocapitalize="false" placeholder=" " id="compare-email" aria-labelledby="label_compare-email">
+                       <label class="input-label" id="label_compare-email" for="compare-email">Confirmação de E-mail</label>
+                   </div>
+               </div>
+           `);
+
+          $(document).ajaxComplete( function(){
+              if( !$('#cta-fake-email').length ){
+                  $('.form-step .btn-primary').hide();
+                  $('.form-step .btn-primary').after('<div id="cta-fake-email" class="pull-right text-uppercase m-top-half btn btn-primary" tabindex="0" role="button" disabled><span>Continuar</span></div>');
+              }
+          })
+
+           // $('.btn[data-testid="btnSubmitZipcode"]').hide();
+           // $('.btn[data-testid="btnSubmitZipcode"]').after('<div id="cta-fake-email" class="pull-right text-uppercase m-top-half btn btn-primary" tabindex="0" role="button" disabled><span>Continuar</span></div>');
+
+           $('.form-step .btn-primary').click( function(e){
+               if( !validEmail() ){
+                   e.preventDefault();
+                   return false;
+               }
+           });
+
+           $('#compare-email').bind('paste', function(e) {
+               e.preventDefault();
+               return false;
+           });
+
+           $('#compare-email').blur( function(){
+               validEmail();
+           });
+           $(document).on('click', '#cta-fake-email', function(){
+               validEmail(true);
+           });
+       }
+
+   };
+
+   // For jQuery version 1.7
+   var target = [1, 7, 0];
+
+   var current = typeof jQuery === 'undefined' ? [0,0,0] : $.fn.jquery.split('.').map(function(item) {
+       return parseInt(item);
+   });
+
+   if (current[0] < target[0] || (current[0] == target[0] && current[1] < target[1])) {
+       loadScript('//ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js', function(){
+           var jQuery1101 = jQuery.noConflict(true);
+           myAppJavaScript(jQuery1101);
+       });
+   } else {
+       myAppJavaScript(jQuery);
+   }
+</script>
